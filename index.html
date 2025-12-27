@@ -6,25 +6,23 @@
     <title>Nilou vs Varessa: Brutal Edition</title>
     <style>
         body { text-align: center; background: #000; color: white; font-family: 'Arial Black', sans-serif; margin: 0; overflow: hidden; touch-action: none; user-select: none; }
-        canvas { background: #0a0a0a; display: block; margin: 0 auto; width: 100vw; height: 50vh; object-fit: contain; border-bottom: 3px solid #600; z-index: 5; }
+        canvas { background: #0a0a0a; display: block; margin: 0 auto; width: 100vw; height: 50vh; object-fit: contain; border-bottom: 3px solid #600; }
         .ui { display: flex; justify-content: space-around; padding: 10px; background: #050505; height: 30px; }
         .health-bar { width: 42%; height: 18px; background: #200; border: 2px solid #fff; }
         .health-inner { height: 100%; width: 100%; background: #f00; transition: 0.1s; }
-        .controls { display: flex; justify-content: space-between; padding: 15px; height: 40vh; align-items: center; background: #080808; position: relative; z-index: 20; }
+        .controls { display: flex; justify-content: space-between; padding: 15px; height: 40vh; align-items: center; background: #080808; position: relative; }
         .d-pad, .actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
         .btn { width: 75px; height: 75px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; border: 2px solid rgba(255,255,255,0.2); color: white; touch-action: none; }
         .btn:active { background: rgba(255,0,0,0.7); transform: scale(0.8); }
         #btn-atk { background: rgba(180,0,0,0.4); width: 110px; height: 110px; border-color: #f00; font-size: 18px; }
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 999; flex-direction: column; }
-        #resetBtn { display: none; margin-top: 20px; padding: 15px 30px; background: red; color: white; border: none; font-weight: bold; border-radius: 10px; font-size: 20px; }
+        .win-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 1000; flex-direction: column; }
     </style>
 </head>
-<body>
+<body onload="startGame()">
 
-    <div id="startOverlay" class="overlay">
-        <h1 id="victoryText" style="color:red; font-size: 50px; text-shadow: 0 0 30px red;">BRUTAL FIGHT</h1>
-        <p id="subText" style="font-size: 24px; color: white; background: #300; padding: 20px; border-radius: 10px;">TAP SCREEN TO START</p>
-        <button id="resetBtn" onclick="location.reload()">REMATCH</button>
+    <div id="winScreen" class="win-screen">
+        <h1 id="winText" style="color:red; font-size: 50px;">FATALITY</h1>
+        <button onclick="location.reload()" style="padding:20px 40px; font-size: 20px; background: red; color:white; border:none; border-radius:10px;">REMATCH</button>
     </div>
 
     <div class="ui">
@@ -48,28 +46,20 @@
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        let particles = [], floorStains = [], fatalityDone = false, gameStarted = false, shake = 0;
+        let particles = [], floorStains = [], fatalityDone = false, shake = 0;
         const keys = {};
 
         const nilouSfx = new Audio('nilou_hurt.mp3');
         const varessaSfx = new Audio('https://cdn.pixabay.com/audio/2022/03/10/audio_510b64687d.mp3');
 
-        // FORCE START SCRIPT
-        const overlay = document.getElementById('startOverlay');
-        
-        function handleStart(e) {
-            if (gameStarted) return;
-            e.preventDefault();
-            gameStarted = true;
-            overlay.style.visibility = 'hidden';
-            overlay.style.display = 'none';
-            // Audio Context Unlock
-            nilouSfx.play().then(() => nilouSfx.pause());
+        function startGame() {
+            // Instant audio unlock on first button touch
+            window.addEventListener('touchstart', function unlock() {
+                nilouSfx.play().then(() => nilouSfx.pause());
+                window.removeEventListener('touchstart', unlock);
+            });
             gameLoop();
         }
-
-        overlay.addEventListener('touchstart', handleStart, {passive: false});
-        overlay.addEventListener('mousedown', handleStart);
 
         const setupBtn = (id, key) => {
             const el = document.getElementById(id);
@@ -152,10 +142,8 @@
                 ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
                 return p.a > 0;
             });
-            if(floorStains.length > 300) floorStains.shift();
 
             p1.update(p2);
-            // AI
             if(!p2.dead) {
                 if(p2.x > p1.x + 110) { keys['ArrowLeft'] = true; keys['ArrowRight'] = false; }
                 else if (p2.x < p1.x - 110) { keys['ArrowRight'] = true; keys['ArrowLeft'] = false; }
@@ -169,15 +157,9 @@
             p1.draw(); p2.draw();
 
             if(fatalityDone) {
-                ctx.fillStyle = "red"; ctx.font = "90px Arial Black"; ctx.textAlign = "center";
+                ctx.fillStyle = "red"; ctx.font = "bold 90px sans-serif"; ctx.textAlign = "center";
                 ctx.fillText("FATALITY", 400, 200);
-                setTimeout(() => {
-                    overlay.style.display = 'flex';
-                    overlay.style.visibility = 'visible';
-                    document.getElementById('victoryText').innerText = (p1.dead ? "VARESSA" : "NILOU") + " WINS";
-                    document.getElementById('subText').style.display = 'none';
-                    document.getElementById('resetBtn').style.display = 'block';
-                }, 2000);
+                setTimeout(() => { document.getElementById('winScreen').style.display = 'flex'; }, 2000);
             }
             ctx.restore();
             requestAnimationFrame(gameLoop);
