@@ -3,48 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nilou vs Varessa: Mobile</title>
+    <title>Nilou vs Varessa: Brutal Edition</title>
     <style>
-        body { 
-            text-align: center; background: #000; color: white; 
-            font-family: sans-serif; margin: 0; overflow: hidden; 
-            touch-action: manipulation; user-select: none;
-        }
-        canvas { 
-            background: #111; display: block; margin: 0 auto; 
-            width: 100vw; height: 50vh; object-fit: contain;
-            border-bottom: 2px solid #333;
-        }
-        /* Mobile UI Bars */
+        body { text-align: center; background: #000; color: white; font-family: 'Arial Black', sans-serif; margin: 0; overflow: hidden; touch-action: manipulation; user-select: none; }
+        canvas { background: #0a0a0a; display: block; margin: 0 auto; width: 100vw; height: 50vh; object-fit: contain; border-bottom: 3px solid #400; }
         .ui { display: flex; justify-content: space-around; padding: 10px; background: #050505; }
-        .health-bar { width: 40%; height: 15px; background: #200; border: 1px solid #fff; }
-        .health-inner { height: 100%; width: 100%; background: #f00; }
-        
-        /* Touch Controls */
-        .controls { 
-            display: flex; justify-content: space-between; 
-            padding: 20px; height: 40vh; align-items: center;
-        }
-        .d-pad, .actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        .btn { 
-            width: 70px; height: 70px; background: rgba(255,255,255,0.2); 
-            border-radius: 50%; display: flex; align-items: center; 
-            justify-content: center; font-weight: bold; font-size: 24px;
-            border: 2px solid rgba(255,255,255,0.4);
-        }
-        .btn:active { background: rgba(255,255,255,0.5); transform: scale(0.9); }
-        
-        .overlay { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.9); display: flex; align-items: center; 
-            justify-content: center; z-index: 100; flex-direction: column;
-        }
+        .health-bar { width: 42%; height: 18px; background: #200; border: 2px solid #fff; box-shadow: 0 0 10px rgba(255,0,0,0.5); }
+        .health-inner { height: 100%; width: 100%; background: #f00; transition: 0.15s; }
+        .controls { display: flex; justify-content: space-between; padding: 15px; height: 42vh; align-items: center; background: linear-gradient(to bottom, #050505, #111); }
+        .d-pad, .actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .btn { width: 75px; height: 75px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; border: 2px solid rgba(255,255,255,0.3); color: white; }
+        .btn:active { background: rgba(255,0,0,0.6); transform: scale(0.85); border-color: red; }
+        #btn-atk { background: rgba(150,0,0,0.4); width: 100px; height: 100px; border-color: #f00; font-size: 20px; }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; align-items: center; justify-content: center; z-index: 100; flex-direction: column; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div id="startOverlay" class="overlay" onclick="startCombat()">
-        <h1 style="color:red;">TAP TO FIGHT</h1>
+        <h1 style="color:red; font-size: 50px; text-shadow: 0 0 20px red;">BRUTAL FIGHT</h1>
+        <p style="letter-spacing: 2px;">TAP TO START THE CARNAGE</p>
     </div>
 
     <div class="ui">
@@ -61,30 +39,25 @@
         </div>
         <div class="actions">
             <div></div> <div></div> <div></div>
-            <div></div> <div class="btn" id="btn-atk" style="background:rgba(255,0,0,0.4); width:90px; height:90px;">HIT</div> <div></div>
+            <div></div> <div class="btn" id="btn-atk">ATTACK</div> <div></div>
         </div>
     </div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        let particles = [], floorStains = [], fatalityDone = false;
-        const keys = {}; // Still works for testing on PC
+        let particles = [], floorStains = [], fatalityDone = false, shake = 0;
+        const keys = {};
 
-        // Audio
         const nilouSfx = new Audio('nilou_hurt.mp3');
         const varessaSfx = new Audio('https://cdn.pixabay.com/audio/2022/03/10/audio_510b64687d.mp3');
 
-        // --- MOBILE TOUCH LISTENERS ---
         const setupBtn = (id, key) => {
             const el = document.getElementById(id);
             el.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; });
             el.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; });
         };
-        setupBtn('btn-up', 'KeyW');
-        setupBtn('btn-left', 'KeyA');
-        setupBtn('btn-right', 'KeyD');
-        setupBtn('btn-atk', 'Space');
+        setupBtn('btn-up', 'KeyW'); setupBtn('btn-left', 'KeyA'); setupBtn('btn-right', 'KeyD'); setupBtn('btn-atk', 'Space');
 
         function startCombat() {
             document.getElementById('startOverlay').style.display = 'none';
@@ -92,45 +65,51 @@
             gameLoop();
         }
 
-        function playHurt(isNilou) {
-            const sfx = isNilou ? nilouSfx : varessaSfx;
-            sfx.currentTime = 0;
-            sfx.play();
-        }
-
         class Fighter {
             constructor(x, imgSrc, side) {
                 this.x = x; this.y = 160; this.w = 180; this.h = 240;
                 this.hp = 100; this.vx = 0; this.vy = 0; this.side = side;
                 this.isJumping = false; this.facingRight = (side === 'left');
-                this.img = new Image(); this.img.src = imgSrc;
-                this.hitTimer = 0; this.dead = false;
+                this.img = new Image(); this.img.crossOrigin = "anonymous"; this.img.src = imgSrc;
+                this.hitTimer = 0; this.dead = false; this.dripCounter = 0;
             }
-
             update(opp, lKey, rKey, uKey, aKey) {
                 if(this.dead) return;
                 if (keys[lKey]) { this.vx = -7; this.facingRight = false; }
                 else if (keys[rKey]) { this.vx = 7; this.facingRight = true; }
                 else this.vx = 0;
-
                 if (keys[uKey] && !this.isJumping) { this.vy = -18; this.isJumping = true; }
                 this.vy += 0.8; this.x += this.vx; this.y += this.vy;
                 if (this.y > 160) { this.y = 160; this.isJumping = false; this.vy = 0; }
-                if (this.hitTimer > 0) this.hitTimer--;
+                if (this.hitTimer > 0) {
+                    this.hitTimer--;
+                    // Dripping blood logic
+                    this.dripCounter++;
+                    if(this.dripCounter % 3 === 0) {
+                        particles.push({x:this.x+Math.random()*150, y:this.y+Math.random()*200, vx:0, vy:2, size:Math.random()*4+2, a:1});
+                    }
+                }
 
                 if (keys[aKey] && !this.cooldown) {
                     this.cooldown = true;
                     if (Math.abs((this.x+90)-(opp.x+90)) < 130) {
-                        opp.hp -= 10; opp.hitTimer = 10;
-                        playHurt(opp.side === 'left');
+                        opp.hp -= 10; opp.hitTimer = 25; shake = 20;
+                        const sound = opp.side === 'left' ? nilouSfx : varessaSfx;
+                        sound.currentTime = 0; sound.play();
                         document.getElementById(opp.side==='left'?'p1-hp':'p2-hp').style.width = Math.max(0, opp.hp) + "%";
-                        for(let i=0; i<20; i++) particles.push({x:opp.x+90, y:opp.y+100, vx:(Math.random()-0.5)*15, vy:(Math.random()-0.7)*15, size:Math.random()*4+1, a:1});
-                        if(opp.hp <= 0) { opp.dead = true; fatalityDone = true; }
+                        // MASSIVE BLOOD BURST
+                        for(let i=0; i<80; i++) {
+                            particles.push({
+                                x:opp.x+90, y:opp.y+100, 
+                                vx:(Math.random()-0.5)*30, vy:(Math.random()-0.7)*30, 
+                                size:Math.random()*7+3, a:1
+                            });
+                        }
+                        if(opp.hp <= 0) { opp.dead = true; fatalityDone = true; shake = 60; }
                     }
                     setTimeout(() => this.cooldown = false, 300);
                 }
             }
-
             draw() {
                 ctx.save();
                 if (!this.facingRight) { ctx.translate(this.x+180, this.y); ctx.scale(-1, 1); }
@@ -138,7 +117,7 @@
                 ctx.drawImage(this.img, 0, 0, 180, 240);
                 if (this.hitTimer > 0 && !this.dead) {
                     ctx.globalCompositeOperation = 'source-atop';
-                    ctx.fillStyle = "rgba(255,0,0,0.6)";
+                    ctx.fillStyle = `rgba(255,0,0,${this.hitTimer/25})`;
                     ctx.fillRect(0,0,180,240);
                 }
                 ctx.restore();
@@ -146,42 +125,40 @@
         }
 
         const p1 = new Fighter(50, 'https://paimon.moe/images/characters/full/nilou.png', 'left');
-        const p2 = new Fighter(550, 'https://static.wikia.nocookie.net/p__/images/6/65/Varesa.png/revision/latest?cb=20250419170552&path-prefix=protagonist', 'right');
+        // VARESSA PORTRAIT UPDATED
+        const p2 = new Fighter(550, 'https://static.wikia.nocookie.net/gensin-impact/images/1/14/Varesa_Portrait.png/revision/latest/scale-to-width-down/250?cb=20250808072047', 'right');
 
         function gameLoop() {
+            ctx.save();
+            if(shake > 0) { ctx.translate((Math.random()-0.5)*shake, (Math.random()-0.5)*shake); shake--; }
             ctx.clearRect(0,0,800,400);
             
-            // Draw floor stains
-            ctx.fillStyle = "rgba(150,0,0,0.5)";
-            floorStains.forEach(s => { ctx.beginPath(); ctx.ellipse(s.x, 385, s.w*3, s.w/2, 0, 0, Math.PI*2); ctx.fill(); });
+            // Floor stains - darker and thicker
+            ctx.fillStyle = "rgba(120,0,0,0.7)";
+            floorStains.forEach(s => { ctx.beginPath(); ctx.ellipse(s.x, 385, s.w*6, s.w/1.2, 0, 0, Math.PI*2); ctx.fill(); });
 
             particles = particles.filter(p => {
-                p.x += p.vx; p.y += p.vy; p.vy += 0.6; p.a -= 0.02;
+                p.x += p.vx; p.y += p.vy; p.vy += 0.8; p.a -= 0.008;
                 if(p.y > 380) { floorStains.push({x:p.x, w:p.size}); return false; }
-                ctx.fillStyle = `rgba(200,0,0,${p.a})`;
+                ctx.fillStyle = `rgba(180,0,0,${p.a})`;
                 ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
                 return p.a > 0;
             });
 
-            // Nilou is P1, Varessa is AI for mobile (or you can add more buttons)
             p1.update(p2, 'KeyA', 'KeyD', 'KeyW', 'Space');
-            
-            // Simple AI for Varessa so you have someone to fight on mobile
             if(!p2.dead) {
-                if(p2.x > p1.x + 100) p2.vx = -3;
-                else if (p2.x < p1.x - 100) p2.vx = 3;
-                else {
-                    p2.vx = 0;
-                    if(Math.random() > 0.95) keys['Enter'] = true; 
-                    else keys['Enter'] = false;
-                }
+                if(p2.x > p1.x + 110) p2.vx = -4; else if (p2.x < p1.x - 110) p2.vx = 4;
+                else { p2.vx = 0; if(Math.random() > 0.94) keys['Enter'] = true; else keys['Enter'] = false; }
                 p2.update(p1, 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'Enter');
             }
 
             p1.draw(); p2.draw();
             if(fatalityDone) {
-                ctx.fillStyle = "red"; ctx.font = "60px sans-serif"; ctx.textAlign = "center"; ctx.fillText("FATALITY", 400, 200);
+                ctx.fillStyle = "red"; ctx.font = "bold 90px sans-serif"; ctx.textAlign = "center"; 
+                ctx.shadowColor = "black"; ctx.shadowBlur = 20;
+                ctx.fillText("FATALITY", 400, 200);
             }
+            ctx.restore();
             requestAnimationFrame(gameLoop);
         }
     </script>
