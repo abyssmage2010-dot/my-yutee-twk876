@@ -3,30 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nilou vs Varessa: Bloody Rematch</title>
+    <title>Nilou vs Varessa: Brutal Edition</title>
     <style>
         body { text-align: center; background: #000; color: white; font-family: 'Arial Black', sans-serif; margin: 0; overflow: hidden; touch-action: none; user-select: none; }
-        canvas { background: #0a0a0a; display: block; margin: 0 auto; width: 100vw; height: 50vh; border-bottom: 3px solid #600; }
-        .ui { display: flex; justify-content: space-around; padding: 10px; background: #050505; height: 30px; }
-        .health-bar { width: 42%; height: 18px; background: #200; border: 2px solid #fff; }
+        /* Background Styling */
+        canvas { 
+            background: linear-gradient(to bottom, #050000 0%, #1a0505 50%, #0a0a0a 100%);
+            display: block; 
+            margin: 0 auto; 
+            width: 100vw; 
+            height: 50vh; 
+            border-bottom: 4px solid #400; 
+        }
+        .ui { display: flex; justify-content: space-around; padding: 10px; background: #050505; height: 30px; border-bottom: 1px solid #333; }
+        .health-bar { width: 42%; height: 18px; background: #200; border: 2px solid #fff; position: relative; overflow: hidden; }
         .health-inner { height: 100%; width: 100%; background: #f00; transition: 0.1s; }
         .controls { display: flex; justify-content: space-between; padding: 15px; height: 40vh; align-items: center; background: #080808; }
         .d-pad, .actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-        .btn { width: 75px; height: 75px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; border: 2px solid rgba(255,255,255,0.2); color: white; touch-action: none; }
-        .btn:active { background: rgba(255,0,0,0.5); transform: scale(0.9); }
-        #btn-atk { background: rgba(180,0,0,0.4); width: 110px; height: 110px; border-color: #f00; font-size: 18px; }
-        .win-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 1000; flex-direction: column; }
+        .btn { width: 75px; height: 75px; background: rgba(255,255,255,0.05); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; border: 2px solid rgba(255,255,255,0.2); color: white; }
+        .btn:active { background: rgba(255,0,0,0.4); transform: scale(0.9); }
+        #btn-atk { background: rgba(180,0,0,0.3); width: 110px; height: 110px; border-color: #f00; font-size: 18px; box-shadow: 0 0 15px rgba(255,0,0,0.2); }
+        .win-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 1000; flex-direction: column; }
     </style>
 </head>
 <body onload="startGame()">
 
     <div id="winScreen" class="win-screen">
-        <h1 id="winText" style="color:red; font-size: 50px;">FATALITY</h1>
-        <button onclick="location.reload()" style="padding:20px 40px; font-size: 20px; background: red; color:white; border:none; border-radius:10px;">REMATCH</button>
+        <h1 id="winText" style="color:red; font-size: 60px; text-shadow: 0 0 20px #f00;">FATALITY</h1>
+        <button onclick="location.reload()" style="padding:20px 40px; font-size: 20px; background: #600; color:white; border:2px solid white; border-radius:10px; cursor:pointer;">REMATCH</button>
     </div>
 
     <div class="ui">
-        <div class="health-bar"><div id="p1-hp" class="health-inner" style="background: #00ffff;"></div></div>
+        <div class="health-bar"><div id="p1-hp" class="health-inner" style="background: #00ffff; box-shadow: 0 0 10px #00ffff;"></div></div>
         <div class="health-bar"><div id="p2-hp" class="health-inner"></div></div>
     </div>
 
@@ -46,7 +54,7 @@
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        let particles = [], floorStains = [], fatalityDone = false, shake = 0;
+        let particles = [], floorStains = [], chunks = [], fatalityDone = false, shake = 0;
         const keys = {};
 
         const nilouSfx = new Audio('nilou_hurt.mp3');
@@ -67,16 +75,53 @@
         };
         setupBtn('btn-up', 'KeyW'); setupBtn('btn-left', 'KeyA'); setupBtn('btn-right', 'KeyD'); setupBtn('btn-atk', 'Space');
 
+        class Chunk {
+            constructor(x, y, vx, vy, size, img, sx, sy) {
+                this.x = x; this.y = y; this.vx = vx; this.vy = vy;
+                this.size = size; this.img = img; this.sx = sx; this.sy = sy;
+                this.angle = Math.random() * Math.PI * 2;
+                this.rot = (Math.random() - 0.5) * 0.2;
+                this.dead = false;
+            }
+            update() {
+                if (this.dead) return;
+                this.vy += 0.6; // Gravity
+                this.x += this.vx; this.y += this.vy;
+                this.angle += this.rot;
+                if (this.y > 380) { this.y = 380; this.dead = true; floorStains.push({x:this.x, w:this.size/2}); }
+            }
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+                ctx.drawImage(this.img, this.sx, this.sy, 40, 40, -this.size/2, -this.size/2, this.size, this.size);
+                ctx.restore();
+            }
+        }
+
         class Fighter {
             constructor(x, imgSrc, side) {
-                this.x = x; this.y = 120; this.w = 180; this.h = 280;
+                this.x = x; this.y = 140; this.w = 180; this.h = 260;
                 this.hp = 100; this.vx = 0; this.vy = 0; this.side = side;
                 this.isJumping = false; this.facingRight = (side === 'left');
                 this.img = new Image(); 
                 this.img.crossOrigin = "anonymous"; 
                 this.img.src = imgSrc;
-                this.hitTimer = 0; this.dead = false;
+                this.hitTimer = 0; this.dead = false; this.shattered = false;
                 this.stains = []; 
+            }
+            shatter() {
+                if (this.shattered) return;
+                this.shattered = true;
+                for (let i = 0; i < 6; i++) {
+                    for (let j = 0; j < 8; j++) {
+                        chunks.push(new Chunk(
+                            this.x + (i * 30), this.y + (j * 30),
+                            (Math.random() - 0.5) * 20, (Math.random() - 1) * 20,
+                            Math.random() * 30 + 20, this.img, i * 30, j * 30
+                        ));
+                    }
+                }
             }
             update(opp) {
                 if(this.dead || fatalityDone) return;
@@ -96,43 +141,33 @@
                 if (keys[aKey] && !this.cooldown) {
                     this.cooldown = true;
                     if (Math.abs((this.x+90)-(opp.x+90)) < 130) {
-                        opp.hp -= 10; opp.hitTimer = 20; shake = 20;
+                        opp.hp -= 10; opp.hitTimer = 20; shake = 25;
                         const sfx = (opp.side === 'left') ? nilouSfx : varessaSfx;
                         sfx.currentTime = 0; sfx.play();
                         document.getElementById(opp.side==='left'?'p1-hp':'p2-hp').style.width = Math.max(0, opp.hp) + "%";
-                        
-                        // Add permanent body blood
-                        opp.stains.push({
-                            sx: Math.random() * 100 + 40, 
-                            sy: Math.random() * 180 + 50, 
-                            r: Math.random() * 20 + 5
-                        });
-
+                        opp.stains.push({sx: Math.random()*120+30, sy: Math.random()*180+40, r: Math.random()*20+10});
                         for(let i=0; i<60; i++) {
-                            particles.push({x:opp.x+90, y:opp.y+120, vx:(Math.random()-0.5)*25, vy:(Math.random()-0.7)*25, size:Math.random()*6+2, a:1});
+                            particles.push({x:opp.x+90, y:opp.y+100, vx:(Math.random()-0.5)*30, vy:(Math.random()-0.7)*30, size:Math.random()*8+2, a:1});
                         }
-                        if(opp.hp <= 0) { opp.dead = true; fatalityDone = true; }
+                        if(opp.hp <= 0) { opp.dead = true; fatalityDone = true; opp.shatter(); }
                     }
                     setTimeout(() => this.cooldown = false, 300);
                 }
             }
             draw() {
+                if (this.shattered) return;
                 ctx.save();
-                if (!this.facingRight) { ctx.translate(this.x+this.w, this.y); ctx.scale(-1, 1); }
+                if (!this.facingRight) { ctx.translate(this.x+180, this.y); ctx.scale(-1, 1); }
                 else { ctx.translate(this.x, this.y); }
-                
-                ctx.drawImage(this.img, 0, 0, this.w, this.h);
-
-                // Body Blood Stains
+                ctx.drawImage(this.img, 0, 0, 180, 260);
                 ctx.globalCompositeOperation = 'source-atop';
                 this.stains.forEach(s => {
-                    ctx.fillStyle = "rgba(140,0,0,0.85)";
+                    ctx.fillStyle = "rgba(140,0,0,0.9)";
                     ctx.beginPath(); ctx.arc(s.sx, s.sy, s.r, 0, Math.PI*2); ctx.fill();
                 });
-
                 if (this.hitTimer > 0) {
                     ctx.fillStyle = `rgba(255,0,0,${this.hitTimer/20})`;
-                    ctx.fillRect(0,0,this.w,this.h);
+                    ctx.fillRect(0,0,180,260);
                     this.hitTimer--;
                 }
                 ctx.restore();
@@ -140,27 +175,42 @@
         }
 
         const p1 = new Fighter(50, 'https://paimon.moe/images/characters/full/nilou.png', 'left');
-        const p2 = new Fighter(550, 'https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/4c61658e-d4be-4618-b1fa-e9594b9b6908/dj70osk-4158d6ed-fe2d-4f9d-86b4-f2a9506b4767.png/v1/fit/w_828,h_1232/varesa_transparent_by_taemuepuan_dj70osk-414w-2x.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MjA4MyIsInBhdGgiOiIvZi80YzYxNjU4ZS1kNGJlLTQ2MTgtYjFmYS1lOTU5NGI5YjY5MDgvZGo3MG9zay00MTU4ZDZlZC1mZTJkLTRmOWQtODZiNC1mMmE5NTA2YjQ3NjcucG5nIiwid2lkdGgiOiI8PTE0MDAifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6aW1hZ2Uub3BlcmF0aW9ucyJdfQ.qMNTuGPDjxKkn55rMCcJiwgLusn57_Xdy0f9kIdBHHU', 'right');
+        const p2 = new Fighter(550, 'https://share.google/images/ivRWIZfwr8RrSy617', 'right');
+
+        function drawArena() {
+            // Draw Gothic Pillars
+            ctx.fillStyle = "#0a0a0a";
+            for(let i=0; i<5; i++) {
+                ctx.fillRect(i * 200, 0, 40, 400);
+                ctx.fillStyle = "#111";
+                ctx.fillRect(i * 200 + 10, 0, 5, 400);
+            }
+            // Floor
+            ctx.fillStyle = "#050505";
+            ctx.fillRect(0, 380, 800, 20);
+        }
 
         function gameLoop() {
             ctx.save();
-            if(shake > 0) { ctx.translate((Math.random()-0.5)*shake, (Math.random()-0.5)*shake); shake--; }
+            if(shake > 0) { ctx.translate((Math.random()-0.5)*shake, (Math.random()-0.5)*shake); shake *= 0.9; }
             ctx.clearRect(0,0,800,400);
+            
+            drawArena();
 
-            // Blood on Floor
             floorStains.forEach(s => {
-                ctx.fillStyle = "rgba(120,0,0,0.5)";
-                ctx.beginPath(); ctx.ellipse(s.x, 395, s.w*6, s.w/1.2, 0, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = "rgba(150,0,0,0.6)";
+                ctx.beginPath(); ctx.ellipse(s.x, 395, s.w*8, s.w/1.2, 0, 0, Math.PI*2); ctx.fill();
             });
 
-            // Splatter Particles
             particles = particles.filter(p => {
                 p.x += p.vx; p.y += p.vy; p.vy += 0.8; p.a -= 0.01;
                 if(p.y > 385) { floorStains.push({x:p.x, w:p.size}); return false; }
-                ctx.fillStyle = `rgba(180,0,0,${p.a})`;
+                ctx.fillStyle = `rgba(200,0,0,${p.a})`;
                 ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
                 return p.a > 0;
             });
+
+            chunks.forEach(c => { c.update(); c.draw(); });
 
             p1.update(p2);
             if(!p2.dead && !fatalityDone) {
@@ -176,9 +226,11 @@
             p1.draw(); p2.draw();
 
             if(fatalityDone) {
-                ctx.fillStyle = "red"; ctx.font = "bold 80px sans-serif"; ctx.textAlign = "center";
+                ctx.fillStyle = "red"; ctx.font = "bold 90px sans-serif"; ctx.textAlign = "center";
+                ctx.shadowBlur = 20; ctx.shadowColor = "red";
                 ctx.fillText("FATALITY", 400, 200);
-                setTimeout(() => { document.getElementById('winScreen').style.display = 'flex'; }, 3000);
+                ctx.shadowBlur = 0;
+                setTimeout(() => { document.getElementById('winScreen').style.display = 'flex'; }, 4000);
             }
             ctx.restore();
             requestAnimationFrame(gameLoop);
