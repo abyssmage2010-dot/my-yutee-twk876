@@ -3,44 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Genshin Shatter: Ultimate Brutal</title>
+    <title>Genshin Shatter: Fix</title>
     <style>
-        body { text-align: center; background: #000; color: white; font-family: 'Arial Black', sans-serif; margin: 0; overflow: hidden; touch-action: none; user-select: none; }
-        
-        /* MENU & UI */
-        #menu, #winScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #080808; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 2000; }
-        #winScreen { display: none; background: rgba(0,0,0,0.95); border: 10px solid #600; }
-        
-        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 20px; }
-        .char-card { width: 95px; height: 95px; border: 3px solid #333; display: flex; align-items: center; justify-content: center; font-size: 11px; cursor: pointer; border-radius: 12px; background: #111; color: #aaa; text-transform: uppercase; }
-        .selected-p1 { border-color: #00ffff !important; box-shadow: 0 0 15px #00ffff; color: #fff !important; }
-        .selected-p2 { border-color: #ff0000 !important; box-shadow: 0 0 15px #ff0000; color: #fff !important; }
-        
-        #start-btn { margin-top: 25px; padding: 18px 50px; background: #a00; color: white; border: none; font-size: 22px; border-radius: 8px; display: none; font-weight: bold; }
-
-        canvas { display: block; width: 100vw; height: 50vh; border-bottom: 5px solid #300; }
-        .ui { display: flex; justify-content: space-around; padding: 10px; background: #050505; height: 35px; align-items: center; }
-        .health-bar { width: 44%; height: 20px; background: #200; border: 2px solid #fff; border-radius: 4px; overflow: hidden; }
+        body { text-align: center; background: #000; color: white; font-family: sans-serif; margin: 0; overflow: hidden; touch-action: none; user-select: none; }
+        #menu, #winScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #111; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 2000; }
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 20px; }
+        .char-card { width: 90px; height: 90px; border: 2px solid #444; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; border-radius: 8px; background: #222; color: #fff; text-transform: uppercase; text-align: center; padding: 5px; box-sizing: border-box; }
+        .selected-p1 { border-color: #00ffff !important; box-shadow: 0 0 10px #00ffff; }
+        .selected-p2 { border-color: #ff0000 !important; box-shadow: 0 0 10px #ff0000; }
+        #start-btn { margin-top: 20px; padding: 15px 40px; background: #a00; color: white; border: none; font-size: 20px; display: none; border-radius: 5px; cursor: pointer; }
+        canvas { display: block; width: 100vw; height: 50vh; background: #000; border-bottom: 3px solid #333; }
+        .ui { display: flex; justify-content: space-around; padding: 5px; background: #000; height: 30px; }
+        .health-bar { width: 45%; height: 15px; background: #333; border: 1px solid #fff; }
         .health-inner { height: 100%; width: 100%; background: #f00; transition: 0.1s; }
-        
-        .controls { display: flex; justify-content: space-between; padding: 15px; height: 40vh; align-items: center; background: #0a0a0a; }
-        .btn { width: 75px; height: 75px; background: rgba(255,255,255,0.05); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; border: 2px solid rgba(255,255,255,0.1); color: white; }
-        #btn-atk { background: rgba(180,0,0,0.4); border-color: #f00; width: 110px; height: 110px; font-size: 18px; color: #ff4444; }
+        .controls { display: flex; justify-content: space-between; padding: 10px; height: 40vh; align-items: center; background: #111; }
+        .btn { width: 70px; height: 70px; background: #333; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 25px; color: white; border: 1px solid #555; cursor: pointer; }
+        #btn-atk { background: #600; width: 100px; height: 100px; color: #f44; font-weight: bold; }
+        #winScreen { display: none; }
     </style>
 </head>
 <body>
 
     <div id="menu">
-        <h2 id="menu-hint" style="color:#666; letter-spacing: 2px;">SELECT YOUR FIGHTER</h2>
+        <h3 id="menu-hint">SELECT YOUR FIGHTER</h3>
         <div class="grid" id="charGrid"></div>
-        <p id="total-wins" style="color: gold; font-size: 14px;">TOTAL FATALITIES: 0</p>
-        <button id="start-btn" onclick="initGame()">COMMENCE</button>
+        <button id="start-btn" onclick="initGame()">COMMENCE FIGHT</button>
     </div>
 
     <div id="winScreen">
-        <h1 style="color:red; font-size: 60px; margin:0;">FATALITY</h1>
-        <p id="victory-text" style="color: white; margin-bottom: 30px; font-size: 20px;"></p>
-        <button style="padding: 20px 50px; background:red; color:white; border:none; border-radius:10px; font-weight:bold;" onclick="location.reload()">NEXT VICTIM</button>
+        <h1 style="color:red; font-size: 40px;">FATALITY</h1>
+        <button onclick="location.reload()" style="padding:15px 30px; background: red; color:white; border:none; cursor:pointer;">REMATCH</button>
     </div>
 
     <div class="ui">
@@ -51,33 +43,50 @@
     <canvas id="gameCanvas" width="800" height="400"></canvas>
 
     <div class="controls">
-        <div class="d-pad">
+        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 5px;">
             <div></div> <div class="btn" id="btn-up">↑</div> <div></div>
             <div class="btn" id="btn-left">←</div> <div></div> <div class="btn" id="btn-right">→</div>
         </div>
-        <div class="btn" id="btn-atk">FATAL HIT</div>
+        <div class="btn" id="btn-atk">ATTACK</div>
     </div>
 
     <script>
+        // UPDATED ROSTER WITH NEW IMAGE LINKS
         const ROSTER = {
-            "nilou": { name: "Nilou", hp: 100, speed: 8, pwr: 10, url: "https://paimon.moe/images/characters/full/nilou.png", color: "#00ffff" },
-            "varessa": { name: "Varessa", hp: 110, speed: 6, pwr: 12, url: "https://raw.githubusercontent.com/Aethelgard/Varessa/main/varesa.png", color: "#ff0000" },
-            "hutao": { name: "Hu Tao", hp: 90, speed: 9, pwr: 15, url: "https://upload.wikimedia.org/wikipedia/en/b/b2/Hu_Tao_%28Genshin_Impact%29.png", color: "#ff4400" },
-            "mualani": { name: "Mualani", hp: 100, speed: 10, pwr: 8, url: "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/4c61658e-d4be-4618-b1fa-e9594b9b6908/dgshh90-09355655-08e0-4965-8b38-89c56ca198ea.png/v1/fit/w_731,h_1093/mualani_transparent_by_taemuepuan_dgshh90-414w-2x.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MjI0MiIsInBhdGgiOiIvZi80YzYxNjU4ZS1kNGJlLTQ2MTgtYjFmYS1lOTU5NGI5YjY5MDgvZGdzaGg5MC0wOTM1NTY1NS0wOGUwLTQ5NjUtOGIzOC04OWM1NmNhMTk4ZWEucG5nIiwid2lkdGgiOiI8PTE1MDAifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6aW1hZ2Uub3BlcmF0aW9ucyJdfQ.3l6I8kI-GIsD0Fj6xR4-3FpT8x8Sj7Xp9O2x3pX2f1w", color: "#00ccff" },
-            "dehya": { name: "Dehya", hp: 120, speed: 5, pwr: 13, url: "https://paimon.moe/images/characters/full/dehya.png", color: "#ff8800" },
-            "yae": { name: "Yae Miko", hp: 100, speed: 7, pwr: 11, url: "https://paimon.moe/images/characters/full/yae-miko.png", color: "#ff00ff" }
+            "mualani": { 
+                name: "Mualani", 
+                hp: 100, 
+                pwr: 9, 
+                color: "#00ccff", 
+                url: "https://static.wikia.nocookie.net/gensin-impact/images/7/73/Mualani_Portrait.png/revision/latest/scale-to-width-down/250" 
+            },
+            "dehya": { 
+                name: "Dehya", 
+                hp: 120, 
+                pwr: 12, 
+                color: "#ffaa00", 
+                url: "https://upload.wikimedia.org/wikipedia/en/2/22/Dehya_%28Genshin_Impact%29.png" 
+            },
+            "hutao": { 
+                name: "Hu Tao", 
+                hp: 90, 
+                pwr: 14, 
+                color: "#ff4400", 
+                url: "https://upload.wikimedia.org/wikipedia/en/b/b2/Hu_Tao_%28Genshin_Impact%29.png" 
+            },
+            "nilou": { name: "Nilou", hp: 100, pwr: 10, color: "#00ffff", url: "https://paimon.moe/images/characters/full/nilou.png" },
+            "yae": { name: "Yae Miko", hp: 100, pwr: 11, color: "#ff00ff", url: "https://paimon.moe/images/characters/full/yae-miko.png" }
         };
 
-        let p1Key = null, p2Key = null, wins = localStorage.getItem('shatterWins') || 0;
-        document.getElementById('total-wins').innerText = `TOTAL FATALITIES: ${wins}`;
-
+        let p1Key = null, p2Key = null;
         const grid = document.getElementById('charGrid');
+        
         Object.keys(ROSTER).forEach(key => {
             let div = document.createElement('div');
             div.className = 'char-card';
             div.innerText = ROSTER[key].name;
             div.onclick = () => {
-                if (!p1Key) { p1Key = key; div.classList.add('selected-p1'); document.getElementById('menu-hint').innerText = "SELECT VICTIM"; }
+                if (!p1Key) { p1Key = key; div.classList.add('selected-p1'); }
                 else if (!p2Key && key !== p1Key) { p2Key = key; div.classList.add('selected-p2'); document.getElementById('start-btn').style.display = 'block'; }
             };
             grid.appendChild(div);
@@ -85,135 +94,111 @@
 
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        let p1, p2, particles = [], floorStains = [], chunks = [], fatalityDone = false, shake = 0, gameActive = false;
+        let p1, p2, particles = [], fatality = false, gameActive = false, shake = 0;
         const keys = {};
 
-        function initGame() {
-            document.getElementById('menu').style.display = 'none';
-            canvas.style.background = `linear-gradient(to bottom, #050505 0%, ${ROSTER[p2Key].color}11 50%, #000 100%)`;
-            p1 = new Fighter(100, ROSTER[p1Key], 'left');
-            p2 = new Fighter(550, ROSTER[p2Key], 'right');
-            gameActive = true;
-            gameLoop();
-        }
-
-        const setupBtn = (id, key) => {
+        function setupBtn(id, key) {
             const el = document.getElementById(id);
             el.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; });
             el.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; });
-        };
-        setupBtn('btn-up', 'KeyW'); setupBtn('btn-left', 'KeyA'); setupBtn('btn-right', 'KeyD'); setupBtn('btn-atk', 'Space');
-
-        class Chunk {
-            constructor(x, y, vx, vy, size, img, sx, sy) {
-                this.x = x; this.y = y; this.vx = vx; this.vy = vy;
-                this.size = size; this.img = img; this.sx = sx; this.sy = sy;
-                this.angle = Math.random() * Math.PI * 2;
-                this.rot = (Math.random() - 0.5) * 0.4;
-                this.dead = false;
-            }
-            update() {
-                if (this.dead) return;
-                this.vy += 0.8; this.x += this.vx; this.y += this.vy;
-                this.angle += this.rot;
-                if (Math.random() > 0.4) particles.push({ x: this.x, y: this.y, vx: (Math.random() - 0.5) * 5, vy: (Math.random() - 0.5) * 5, size: Math.random() * 5 + 2, a: 1 });
-                if (this.y > 380) { this.y = 380; this.dead = true; floorStains.push({x: this.x, w: this.size * 1.5}); }
-            }
-            draw() {
-                ctx.save();
-                ctx.translate(this.x, this.y); ctx.rotate(this.angle);
-                ctx.drawImage(this.img, this.sx, this.sy, 60, 60, -this.size/2, -this.size/2, this.size, this.size);
-                ctx.globalCompositeOperation = "source-atop";
-                ctx.fillStyle = "rgba(180, 0, 0, 0.6)"; ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size);
-                ctx.restore();
-            }
+            // Support for mouse clicks for testing on PC
+            el.addEventListener('mousedown', () => { keys[key] = true; });
+            el.addEventListener('mouseup', () => { keys[key] = false; });
         }
+        setupBtn('btn-up', 'w'); setupBtn('btn-left', 'a'); setupBtn('btn-right', 'd'); setupBtn('btn-atk', 's');
 
         class Fighter {
             constructor(x, data, side) {
                 this.x = x; this.y = 140; this.hp = data.hp; this.maxHp = data.hp;
-                this.speed = data.speed; this.pwr = data.pwr; this.name = data.name;
-                this.side = side; this.img = new Image(); this.img.crossOrigin = "anonymous"; this.img.src = data.url;
-                this.vy = 0; this.facingRight = (side === 'left'); this.stains = [];
-            }
-            shatter() {
-                if (this.shattered) return;
-                this.shattered = true;
-                for (let i = 0; i < 6; i++) {
-                    for (let j = 0; j < 8; j++) {
-                        chunks.push(new Chunk(this.x + (i * 30), this.y + (j * 30), (Math.random() - 0.5) * 40, (Math.random() - 1) * 45, Math.random() * 45 + 15, this.img, i * 100, j * 150));
-                    }
-                }
+                this.pwr = data.pwr; this.color = data.color; this.side = side;
+                this.vy = 0; this.loaded = false;
+                this.img = new Image();
+                this.img.crossOrigin = "anonymous"; // Helps with canvas issues
+                this.img.onload = () => { this.loaded = true; };
+                this.img.src = data.url;
             }
             update(opp) {
-                if(fatalityDone) return;
-                if(this.side === 'left') {
-                    if(keys['KeyA']) { this.x -= this.speed; this.facingRight = false; }
-                    if(keys['KeyD']) { this.x += this.speed; this.facingRight = true; }
-                    if(keys['KeyW'] && this.y === 140) this.vy = -18;
-                    if(keys['Space'] && !this.cooldown) {
-                        this.cooldown = true;
-                        if(Math.abs((this.x+90)-(opp.x+90)) < 130) {
-                            opp.hp -= this.pwr; shake = 35;
-                            opp.stains.push({sx: Math.random()*120+30, sy: Math.random()*180+40, r: Math.random()*25+15});
-                            for(let i=0; i<80; i++) particles.push({x:opp.x+90, y:opp.y+100, vx:(Math.random()-0.5)*35, vy:(Math.random()-0.7)*35, size:Math.random()*10+2, a:1});
-                            document.getElementById('p2-hp').style.width = Math.max(0, (opp.hp/opp.maxHp)*100) + "%";
-                            if(opp.hp <= 0) { 
-                                fatalityDone = true; wins++; localStorage.setItem('shatterWins', wins);
-                                opp.shatter();
-                                setTimeout(() => { document.getElementById('victory-text').innerText = `${this.name.toUpperCase()} ERADICATED ${opp.name.toUpperCase()}`; document.getElementById('winScreen').style.display = 'flex'; }, 4000);
-                            }
+                if (fatality) return;
+                if (this.side === 'left') {
+                    if (keys['a']) this.x -= 7;
+                    if (keys['d']) this.x += 7;
+                    if (keys['w'] && this.y === 140) this.vy = -18;
+                    if (keys['s'] && !this.cd) {
+                        this.cd = true;
+                        if (Math.abs(this.x - opp.x) < 120) {
+                            opp.hp -= this.pwr; shake = 20;
+                            for(let i=0; i<20; i++) particles.push({x:opp.x+80, y:opp.y+100, vx:(Math.random()-0.5)*15, vy:(Math.random()-0.5)*15, life:1});
+                            document.getElementById(opp.side === 'left' ? 'p1-hp' : 'p2-hp').style.width = Math.max(0, (opp.hp / opp.maxHp * 100)) + "%";
+                            if (opp.hp <= 0) { fatality = true; setTimeout(()=>document.getElementById('winScreen').style.display='flex', 3000); }
                         }
-                        setTimeout(() => this.cooldown = false, 300);
+                        setTimeout(() => this.cd = false, 300);
                     }
-                } else { // AI
-                    if(this.x > opp.x + 110) this.x -= this.speed*0.7;
-                    else if(this.x < opp.x - 110) this.x += this.speed*0.7;
-                    else if(Math.random() > 0.97) {
-                        opp.hp -= this.pwr; shake = 15;
-                        document.getElementById('p1-hp').style.width = Math.max(0, (opp.hp/opp.maxHp)*100) + "%";
-                        if(opp.hp <= 0) { fatalityDone = true; alert("DEFEATED"); location.reload(); }
+                } else { // AI logic
+                    if (this.x > opp.x + 100) this.x -= 4;
+                    else if (this.x < opp.x - 100) this.x += 4;
+                    else if (Math.random() > 0.98) {
+                        opp.hp -= 5;
+                        document.getElementById('p1-hp').style.width = Math.max(0, (opp.hp / opp.maxHp * 100)) + "%";
+                        if (opp.hp <= 0) location.reload();
                     }
                 }
                 this.vy += 0.8; this.y += this.vy;
-                if(this.y > 140) { this.y = 140; this.vy = 0; }
+                if (this.y > 140) { this.y = 140; this.vy = 0; }
+                // Constrain to screen
+                if (this.x < 0) this.x = 0;
+                if (this.x > 640) this.x = 640;
             }
             draw() {
-                if(this.shattered) return;
-                ctx.save();
-                if(!this.facingRight) { ctx.translate(this.x+180, this.y); ctx.scale(-1, 1); }
-                else ctx.translate(this.x, this.y);
-                ctx.drawImage(this.img, 0, 0, 180, 260);
-                ctx.globalCompositeOperation = 'source-atop';
-                this.stains.forEach(s => { ctx.fillStyle = "rgba(180,0,0,0.85)"; ctx.beginPath(); ctx.arc(s.sx, s.sy, s.r, 0, Math.PI*2); ctx.fill(); });
-                ctx.restore();
+                if (this.hp <= 0 && fatality) {
+                    ctx.fillStyle = "red";
+                    ctx.font = "20px Arial";
+                    ctx.fillText("CRUSHED", this.x + 80, this.y + 100);
+                    return;
+                }
+                if (this.loaded) {
+                    ctx.drawImage(this.img, this.x, this.y, 160, 240);
+                } else {
+                    ctx.fillStyle = this.color;
+                    ctx.fillRect(this.x, this.y + 40, 100, 200);
+                }
             }
         }
 
-        function gameLoop() {
-            if(!gameActive) return;
-            ctx.save();
-            if(shake > 0) { ctx.translate((Math.random()-0.5)*shake, (Math.random()-0.5)*shake); shake *= 0.9; }
-            ctx.clearRect(0,0,800,400);
+        function initGame() {
+            document.getElementById('menu').style.display = 'none';
+            p1 = new Fighter(100, ROSTER[p1Key], 'left');
+            p2 = new Fighter(500, ROSTER[p2Key], 'right');
+            gameActive = true;
+            loop();
+        }
 
-            // Floor Stains
-            floorStains.forEach(s => { ctx.fillStyle = "rgba(150,0,0,0.6)"; ctx.beginPath(); ctx.ellipse(s.x, 395, s.w*2, s.w/2, 0, 0, Math.PI*2); ctx.fill(); });
+        function loop() {
+            if (!gameActive) return;
+            ctx.clearRect(0, 0, 800, 400);
+            
+            if (shake > 0) { 
+                ctx.save();
+                ctx.translate(Math.random()*shake, Math.random()*shake); 
+                shake *= 0.9; 
+            }
 
-            // Particles
             particles = particles.filter(p => {
-                p.x += p.vx; p.y += p.vy; p.vy += 0.8; p.a -= 0.015;
-                if(p.y > 385) { floorStains.push({x:p.x, w:p.size}); return false; }
-                ctx.fillStyle = `rgba(200,0,0,${p.a})`; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
-                return p.a > 0;
+                p.x += p.vx; p.y += p.vy; p.life -= 0.02;
+                ctx.fillStyle = `rgba(255,0,0,${p.life})`;
+                ctx.fillRect(p.x, p.y, 5, 5);
+                return p.life > 0;
             });
-
-            chunks.forEach(c => { c.update(); c.draw(); });
 
             p1.update(p2); p2.update(p1);
             p1.draw(); p2.draw();
-            if(fatalityDone) { ctx.fillStyle = "red"; ctx.font = "bold 80px sans-serif"; ctx.textAlign = "center"; ctx.fillText("FATALITY", 400, 200); }
-            ctx.restore();
-            requestAnimationFrame(gameLoop);
+
+            if (fatality) {
+                ctx.fillStyle = "red"; ctx.font = "60px Impact"; ctx.textAlign = "center";
+                ctx.fillText("FATALITY", 400, 200);
+            }
+
+            if (shake > 0) ctx.restore();
+            requestAnimationFrame(loop);
         }
     </script>
 </body>
