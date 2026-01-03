@@ -3,205 +3,243 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Genshin Shatter: Fix</title>
+    <title>Genshin Shatter: Carnage Edition</title>
     <style>
-        body { text-align: center; background: #000; color: white; font-family: sans-serif; margin: 0; overflow: hidden; touch-action: none; user-select: none; }
-        #menu, #winScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #111; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 2000; }
-        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 20px; }
-        .char-card { width: 90px; height: 90px; border: 2px solid #444; display: flex; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; border-radius: 8px; background: #222; color: #fff; text-transform: uppercase; text-align: center; padding: 5px; box-sizing: border-box; }
-        .selected-p1 { border-color: #00ffff !important; box-shadow: 0 0 10px #00ffff; }
-        .selected-p2 { border-color: #ff0000 !important; box-shadow: 0 0 10px #ff0000; }
-        #start-btn { margin-top: 20px; padding: 15px 40px; background: #a00; color: white; border: none; font-size: 20px; display: none; border-radius: 5px; cursor: pointer; }
-        canvas { display: block; width: 100vw; height: 50vh; background: #000; border-bottom: 3px solid #333; }
-        .ui { display: flex; justify-content: space-around; padding: 5px; background: #000; height: 30px; }
-        .health-bar { width: 45%; height: 15px; background: #333; border: 1px solid #fff; }
-        .health-inner { height: 100%; width: 100%; background: #f00; transition: 0.1s; }
-        .controls { display: flex; justify-content: space-between; padding: 10px; height: 40vh; align-items: center; background: #111; }
-        .btn { width: 70px; height: 70px; background: #333; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 25px; color: white; border: 1px solid #555; cursor: pointer; }
-        #btn-atk { background: #600; width: 100px; height: 100px; color: #f44; font-weight: bold; }
-        #winScreen { display: none; }
+        body{text-align:center;background:#000;color:#fff;font-family:sans-serif;margin:0;overflow:hidden;touch-action:none;user-select:none}
+        #menu,#vs-screen,#rematch-ui{position:fixed;top:0;left:0;width:100%;height:100%;background:#0a0000;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999}
+        #vs-screen,#rematch-ui{display:none}
+        #tracker{position:absolute;top:10px;left:0;width:100%;font-weight:bold;font-size:14px;color:#800;z-index:10000;pointer-events:none}
+        .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:20px}
+        .char-card{width:100px;height:140px;border:2px solid #300;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;cursor:pointer;border-radius:8px;background:#1a0000}
+        .stat-preview-bg{width:80%;height:5px;background:#333;margin:2px 0;border-radius:3px;overflow:hidden}
+        .stat-fill-hp{height:100%;background:#0f0}
+        .stat-fill-atk{height:100%;background:#f0f}
+        .selected-p1{border-color:#0ff!important;box-shadow:0 0 15px #0ff}
+        .selected-p2{border-color:#f00!important;box-shadow:0 0 15px #f00}
+        .vs-container{display:flex;align-items:center;justify-content:space-around;width:100%;height:350px}
+        .vs-box{width:180px;text-align:center;transition:.8s cubic-bezier(.175,.885,.32,1.275)}
+        .vs-box img{width:130px;height:130px;border-radius:15px;border:4px solid #fff;object-fit:cover;background:#000}
+        .intel-tag{font-size:10px;margin-top:5px;text-align:left;background:rgba(0,0,0,.5);padding:5px;border-radius:4px;border-left:2px solid #f00;line-height:1.4}
+        .strength{color:#0f0}
+        .weakness{color:#f00}
+        #p1-vs-box{transform:translateX(-500px)}
+        #p2-vs-box{transform:translateX(500px)}
+        .vs-text{font-size:80px;font-weight:bold;color:#f00;font-style:italic;opacity:0;transform:scale(4);transition:.5s ease-out;text-shadow:0 0 20px #f00}
+        .active-vs #p1-vs-box,.active-vs #p2-vs-box{transform:translateX(0)}
+        .active-vs .vs-text{opacity:1;transform:scale(1)}
+        #rank-display{font-size:120px;font-family:Impact;margin:10px 0;color:#f00;text-shadow:0 0 30px #f00}
+        canvas{display:block;width:100vw;height:50vh;background:#050000;border-bottom:6px solid #400}
+        .ui{display:flex;justify-content:space-around;padding:8px;background:#000;height:45px;flex-direction:column;gap:5px}
+        .health-row{display:flex;justify-content:space-around;align-items:center}
+        .health-bar-container{width:45%;height:20px;background:#222;border:2px solid #555;position:relative}
+        .health-inner{height:100%;width:100%;background:#f00;box-shadow:0 0 10px #f00;transition:width .1s}
+        .stamina-row{display:flex;justify-content:space-around;align-items:center}
+        .stamina-bar-container{width:45%;height:8px;background:#111;border:1px solid #444}
+        .stamina-inner{height:100%;width:100%;background:#ff0;box-shadow:0 0 5px #ff0;transition:width .05s}
+        .controls{display:flex;justify-content:space-around;padding:15px;height:38vh;align-items:center;background:#0a0000}
+        .btn{width:90px;height:90px;background:#222;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;color:#fff;border:3px solid #444;font-weight:bold}
+        .btn:active{background:#444;transform:scale(.95)}
+        #btn-atk{background:#600;width:120px;height:120px;font-weight:bold;border:5px solid #f00;color:#f00;font-size:20px}
+        #btn-block{background:#006;width:120px;height:120px;font-weight:bold;border:5px solid #00f;color:#0ff;font-size:18px}
+        .move-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+        .action-buttons{display:flex;flex-direction:column;gap:12px}
+        #btn-special{background:#404;width:120px;height:120px;font-weight:bold;border:5px solid #808;color:#f0f;font-size:16px;opacity:.3;pointer-events:none}
+        #btn-special.ready{opacity:1;pointer-events:all;background:#606;border-color:#f0f;box-shadow:0 0 20px #f0f;animation:pulse 1s infinite}
+        @keyframes pulse{0%,100%{box-shadow:0 0 20px #f0f}50%{box-shadow:0 0 30px #f0f,0 0 40px #f0f}}
     </style>
 </head>
 <body>
-
-    <div id="menu">
-        <h3 id="menu-hint">SELECT YOUR FIGHTER</h3>
-        <div class="grid" id="charGrid"></div>
-        <button id="start-btn" onclick="initGame()">COMMENCE FIGHT</button>
-    </div>
-
-    <div id="winScreen">
-        <h1 style="color:red; font-size: 40px;">FATALITY</h1>
-        <button onclick="location.reload()" style="padding:15px 30px; background: red; color:white; border:none; cursor:pointer;">REMATCH</button>
-    </div>
-
-    <div class="ui">
-        <div class="health-bar"><div id="p1-hp" class="health-inner" style="background: #00ffff;"></div></div>
-        <div class="health-bar"><div id="p2-hp" class="health-inner"></div></div>
-    </div>
-
+    <div id="tracker">VICTIMS - P1: <span id="p-wins">0</span> | AI: <span id="a-wins">0</span></div>
+    <div id="menu"><h1 style="color:#f00;font-style:italic;text-shadow:0 0 15px #f00">GENSHIN SHATTER</h1><div class="grid" id="charGrid"></div></div>
+    <div id="vs-screen"><div class="vs-container"><div id="p1-vs-box" class="vs-box"></div><div class="vs-text">VS</div><div id="p2-vs-box" class="vs-box"></div></div><button id="start-btn" style="padding:15px 40px;background:#b00;border:2px solid #fff;color:#fff;font-weight:bold;border-radius:10px;cursor:pointer" onclick="initGame()">COMMENCE</button></div>
+    <div id="rematch-ui"><h1 id="final-msg" style="color:red;font-family:Impact;margin:0;font-size:50px">WASTED</h1><div id="rank-display">S</div><button id="rematch-btn" style="padding:15px 40px;background:#b00;color:#fff;border-radius:10px;border:2px solid #fff" onclick="resetToMenu()">CLEAN UP</button></div>
+    <div class="ui"><div class="health-row"><div class="health-bar-container"><div id="p1-hp-bar" class="health-inner" style="background:#0ff"></div></div><div class="health-bar-container"><div id="p2-hp-bar" class="health-inner"></div></div></div><div class="stamina-row"><div class="stamina-bar-container"><div id="p1-stam-bar" class="stamina-inner"></div></div><div class="stamina-bar-container"><div id="p2-stam-bar" class="stamina-inner"></div></div></div></div>
     <canvas id="gameCanvas" width="800" height="400"></canvas>
+    <div class="controls"><div class="move-grid"><div></div><div class="btn" id="btn-up">↑</div><div></div><div class="btn" id="btn-left">←</div><div></div><div class="btn" id="btn-right">→</div></div><div class="action-buttons"><div class="btn" id="btn-atk">STRIKE</div><div class="btn" id="btn-block">BLOCK</div><div class="btn" id="btn-special">SPECIAL</div></div></div>
 
-    <div class="controls">
-        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 5px;">
-            <div></div> <div class="btn" id="btn-up">↑</div> <div></div>
-            <div class="btn" id="btn-left">←</div> <div></div> <div class="btn" id="btn-right">→</div>
-        </div>
-        <div class="btn" id="btn-atk">ATTACK</div>
-    </div>
+<script>
+    const ac = new (window.AudioContext || window.webkitAudioContext)();
+    let pW = 0, aW = 0;
 
-    <script>
-        // UPDATED ROSTER WITH NEW IMAGE LINKS
-        const ROSTER = {
-            "mualani": { 
-                name: "Mualani", 
-                hp: 100, 
-                pwr: 9, 
-                color: "#00ccff", 
-                url: "https://static.wikia.nocookie.net/gensin-impact/images/7/73/Mualani_Portrait.png/revision/latest/scale-to-width-down/250" 
-            },
-            "dehya": { 
-                name: "Dehya", 
-                hp: 120, 
-                pwr: 12, 
-                color: "#ffaa00", 
-                url: "https://upload.wikimedia.org/wikipedia/en/2/22/Dehya_%28Genshin_Impact%29.png" 
-            },
-            "hutao": { 
-                name: "Hu Tao", 
-                hp: 90, 
-                pwr: 14, 
-                color: "#ff4400", 
-                url: "https://upload.wikimedia.org/wikipedia/en/b/b2/Hu_Tao_%28Genshin_Impact%29.png" 
-            },
-            "nilou": { name: "Nilou", hp: 100, pwr: 10, color: "#00ffff", url: "https://paimon.moe/images/characters/full/nilou.png" },
-            "yae": { name: "Yae Miko", hp: 100, pwr: 11, color: "#ff00ff", url: "https://paimon.moe/images/characters/full/yae-miko.png" }
-        };
+    // NILOU CUSTOM AUDIO
+    const nilouHurt = new Audio('nilou.hurt.mp3');
 
-        let p1Key = null, p2Key = null;
-        const grid = document.getElementById('charGrid');
-        
-        Object.keys(ROSTER).forEach(key => {
-            let div = document.createElement('div');
-            div.className = 'char-card';
-            div.innerText = ROSTER[key].name;
-            div.onclick = () => {
-                if (!p1Key) { p1Key = key; div.classList.add('selected-p1'); }
-                else if (!p2Key && key !== p1Key) { p2Key = key; div.classList.add('selected-p2'); document.getElementById('start-btn').style.display = 'block'; }
+    function pS(vol = 1, pitch = 1) {
+        if (ac.state === 'suspended') ac.resume();
+        const duration = 0.15;
+        const bufferSize = ac.sampleRate * duration;
+        const buffer = ac.createBuffer(1, bufferSize, ac.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) { data[i] = Math.random() * 2 - 1; }
+        const noise = ac.createBufferSource();
+        noise.buffer = buffer;
+        const filter = ac.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(1800 * pitch, ac.currentTime);
+        filter.frequency.exponentialRampToValueAtTime(40, ac.currentTime + (duration * 0.8));
+        filter.Q.value = 8;
+        const gain = ac.createGain();
+        gain.gain.setValueAtTime(vol * 0.4, ac.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ac.currentTime + duration);
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(ac.destination);
+        noise.start();
+        noise.stop(ac.currentTime + duration);
+    }
+
+    const R = {
+        "hutao": {name:"Hu Tao",hp:70,pwr:11,reg:.08,stam:120,stamRegen:.6,str:"Crushing Speed",weak:"Fragile Build",url:"https://i.postimg.cc/3NNp1r9t/IMG-4354.png"},
+        "varessa": {name:"Varessa",hp:110,pwr:10,reg:.01,stam:80,stamRegen:.4,str:"Iron Resilience",weak:"Slow Tempo",url:"https://i.postimg.cc/43hXzDzG/IMG-4356.webp"},
+        "yae": {name:"Yae Miko",hp:90,pwr:9,reg:.01,stam:110,stamRegen:.55,str:"Precise Reach",weak:"Low Impact",url:"https://i.postimg.cc/FRkj4BbZ/IMG-4355.jpg"},
+        "mualani": {name:"Mualani",hp:80,pwr:11,reg:.08,stam:115,stamRegen:.6,str:"Burst Pressure",weak:"Exposed State",url:"https://i.postimg.cc/VLfd9hSq/IMG-4349.png",hurtUrl:"https://i.postimg.cc/253PS81x/IMG-4406.png",bloodiedUrl:"https://i.postimg.cc/5tjZ2NX3/IMG-4405.png"},
+        "nilou": {name:"Nilou",hp:70,pwr:11,reg:.08,stam:125,stamRegen:.65,str:"Fluid Movement",weak:"Zero Armor",url:"https://i.postimg.cc/65DRVXZQ/IMG-4350.png"},
+        "dehya": {name:"Dehya",hp:100,pwr:10.5,reg:.02,stam:85,stamRegen:.45,str:"Tank Stance",weak:"Narrow Strike",url:"https://i.postimg.cc/mr4HqyVv/IMG-4351.png"}
+    };
+
+    let p1K = null, p2K = null;
+    function bG() {
+        const g = document.getElementById('charGrid'); g.innerHTML = '';
+        Object.keys(R).forEach(k => {
+            let c = R[k], d = document.createElement('div');
+            d.className = 'char-card'; d.innerHTML = `<b>${c.name}</b><div class="stat-preview-bg"><div class="stat-fill-hp" style="width:${(c.hp/110)*100}%"></div></div><div class="stat-preview-bg"><div class="stat-fill-atk" style="width:${(c.pwr/11)*100}%"></div></div>`;
+            d.onclick = () => {
+                if (!p1K) { p1K = k; d.classList.add('selected-p1'); pS(1, 1.5); }
+                else if (!p2K && k !== p1K) { p2K = k; d.classList.add('selected-p2'); pS(1, 0.6); sV(); }
             };
-            grid.appendChild(div);
+            g.appendChild(d);
         });
+    }
+    window.onload = bG;
 
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        let p1, p2, particles = [], fatality = false, gameActive = false, shake = 0;
-        const keys = {};
+    function sV() {
+        const c1 = R[p1K], c2 = R[p2K], s = document.getElementById('vs-screen');
+        s.classList.remove('active-vs');
+        document.getElementById('p1-vs-box').innerHTML = `<img src="${c1.url}"><div style="color:#0ff;font-weight:bold">PLAYER</div><div class="intel-tag"><span class="strength">STRENGTH:</span> ${c1.str}<br><span class="weakness">WEAKNESS:</span> ${c1.weak}</div>`;
+        document.getElementById('p2-vs-box').innerHTML = `<img src="${c2.url}"><div style="color:#f00;font-weight:bold">TARGET</div><div class="intel-tag"><span class="strength">STRENGTH:</span> ${c2.str}<br><span class="weakness">WEAKNESS:</span> ${c2.weak}</div>`;
+        s.style.display = 'flex'; s.offsetHeight;
+        setTimeout(() => s.classList.add('active-vs'), 100);
+    }
 
-        function setupBtn(id, key) {
-            const el = document.getElementById(id);
-            el.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; });
-            el.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; });
-            // Support for mouse clicks for testing on PC
-            el.addEventListener('mousedown', () => { keys[key] = true; });
-            el.addEventListener('mouseup', () => { keys[key] = false; });
+    const cv = document.getElementById('gameCanvas'), ctx = cv.getContext('2d'), bg = new Image();
+    bg.src = "https://i.postimg.cc/hPWPcwDL/IMG-4372.jpg";
+    let p1, p2, pt = [], bS = [], ch = [], dN = [], fat = false, gA = false, shk = 0, hS = 0, gST = 0, sR = false;
+    const ks = {};
+
+    class F {
+        constructor(x, d, s) {
+            this.x = x; this.y = 180; this.hp = d.hp; this.maxHp = d.hp; this.pwr = d.pwr;
+            this.reg = d.reg; this.side = s; this.vy = 0; this.vx = 0; this.dead = false; this.data = d;
+            this.img = new Image(); this.img.crossOrigin = "anonymous"; this.img.src = d.url;
+            if (d.hurtUrl) { this.hI = new Image(); this.hI.src = d.hurtUrl; }
+            if (d.bloodiedUrl) { this.bI = new Image(); this.bI.src = d.bloodiedUrl; }
+            this.stun = false; this.sT = 0; this.stam = d.stam; this.maxS = d.stam; this.sReg = d.stamRegen;
+            this.blk = false; this.spU = false;
         }
-        setupBtn('btn-up', 'w'); setupBtn('btn-left', 'a'); setupBtn('btn-right', 'd'); setupBtn('btn-atk', 's');
-
-        class Fighter {
-            constructor(x, data, side) {
-                this.x = x; this.y = 140; this.hp = data.hp; this.maxHp = data.hp;
-                this.pwr = data.pwr; this.color = data.color; this.side = side;
-                this.vy = 0; this.loaded = false;
-                this.img = new Image();
-                this.img.crossOrigin = "anonymous"; // Helps with canvas issues
-                this.img.onload = () => { this.loaded = true; };
-                this.img.src = data.url;
+        upd(o) {
+            if (this.dead || fat) return;
+            if (this.stun) { this.sT--; if (this.sT <= 0) this.stun = false; this.vx *= 0.85; this.vy += 1.2; this.y += this.vy; if (this.y > 180) { this.y = 180; this.vy = 0; } return; }
+            if (this.stam < this.maxS) this.stam = Math.min(this.maxS, this.stam + this.sReg);
+            if (this.hp < this.maxHp) this.hp = Math.min(this.maxHp, this.hp + this.reg);
+            let hP = (this.hp / this.maxHp) * 100;
+            if (this.data.bloodiedUrl && hP <= 25) { if (this.img.src !== this.data.bloodiedUrl) this.img.src = this.data.bloodiedUrl; }
+            else if (this.data.hurtUrl && hP <= 50) { if (this.img.src !== this.data.hurtUrl) this.img.src = this.data.hurtUrl; }
+            else if (hP > 50) { if (this.img.src !== this.data.url) this.img.src = this.data.url; }
+            this.x += this.vx; this.vx *= 0.85;
+            if (this.side === 'left') {
+                this.blk = ks['b'];
+                if (!this.blk) {
+                    if (ks['a']) this.x -= 8; if (ks['d']) this.x += 8;
+                    if (ks['w'] && this.y === 180) this.vy = -20;
+                    if (ks['s'] && !this.cd && this.stam >= 15) { this.hit(o); this.stam -= 15; this.cd = true; setTimeout(() => this.cd = false, 250); }
+                    if (ks['sp'] && sR && !this.spU && this.data.name === "Mualani") { this.uSp(o); this.spU = true; }
+                }
+            } else {
+                let d = Math.abs(this.x - o.x);
+                if (hP < 30 && d < 200) { this.x += (o.x > this.x ? -5 : 5); }
+                else if (d > 130) { this.x += (o.x > this.x ? 6 : -6); }
+                else if (!this.cd && this.stam >= 15) { this.hit(o); this.stam -= 15; this.cd = true; setTimeout(() => this.cd = false, 400); }
             }
-            update(opp) {
-                if (fatality) return;
-                if (this.side === 'left') {
-                    if (keys['a']) this.x -= 7;
-                    if (keys['d']) this.x += 7;
-                    if (keys['w'] && this.y === 140) this.vy = -18;
-                    if (keys['s'] && !this.cd) {
-                        this.cd = true;
-                        if (Math.abs(this.x - opp.x) < 120) {
-                            opp.hp -= this.pwr; shake = 20;
-                            for(let i=0; i<20; i++) particles.push({x:opp.x+80, y:opp.y+100, vx:(Math.random()-0.5)*15, vy:(Math.random()-0.5)*15, life:1});
-                            document.getElementById(opp.side === 'left' ? 'p1-hp' : 'p2-hp').style.width = Math.max(0, (opp.hp / opp.maxHp * 100)) + "%";
-                            if (opp.hp <= 0) { fatality = true; setTimeout(()=>document.getElementById('winScreen').style.display='flex', 3000); }
-                        }
-                        setTimeout(() => this.cd = false, 300);
-                    }
-                } else { // AI logic
-                    if (this.x > opp.x + 100) this.x -= 4;
-                    else if (this.x < opp.x - 100) this.x += 4;
-                    else if (Math.random() > 0.98) {
-                        opp.hp -= 5;
-                        document.getElementById('p1-hp').style.width = Math.max(0, (opp.hp / opp.maxHp * 100)) + "%";
-                        if (opp.hp <= 0) location.reload();
-                    }
+            this.vy += 1.2; this.y += this.vy; if (this.y > 180) { this.y = 180; this.vy = 0; }
+            this.x = Math.max(0, Math.min(800 - (this.w || 100), this.x));
+        }
+        hit(o) {
+            if (Math.abs(this.x - o.x) < 150) {
+                let dm = this.pwr;
+                if (o.blk) { dm *= 0.3; pS(0.4, 2.0); o.vx = (this.x < o.x ? 10 : -10); } 
+                else {
+                    o.stun = true; o.sT = 15; o.vx = (this.x < o.x ? 25 : -25);
+                    shk = 45; hS = 6;
+                    
+                    // CUSTOM NILOU HURT SOUND
+                    if(o.data.name === "Nilou") {
+                        nilouHurt.currentTime = 0;
+                        nilouHurt.play().catch(e => pS(1.2, 1.0));
+                    } else { pS(1.2, 1.0); }
+                    
+                    for (let i = 0; i < 35; i++) pt.push({x: o.x + 50, y: o.y + 100, vx: (this.x < o.x ? 1 : -1) * (Math.random() * 25), vy: (Math.random() - 0.5) * 25, life: 1, size: Math.random() * 15 + 4, color: `rgba(${160 + Math.random() * 95},0,0,`});
                 }
-                this.vy += 0.8; this.y += this.vy;
-                if (this.y > 140) { this.y = 140; this.vy = 0; }
-                // Constrain to screen
-                if (this.x < 0) this.x = 0;
-                if (this.x > 640) this.x = 640;
-            }
-            draw() {
-                if (this.hp <= 0 && fatality) {
-                    ctx.fillStyle = "red";
-                    ctx.font = "20px Arial";
-                    ctx.fillText("CRUSHED", this.x + 80, this.y + 100);
-                    return;
-                }
-                if (this.loaded) {
-                    ctx.drawImage(this.img, this.x, this.y, 160, 240);
-                } else {
-                    ctx.fillStyle = this.color;
-                    ctx.fillRect(this.x, this.y + 40, 100, 200);
-                }
+                o.hp -= dm; dN.push({x: o.x + 50, y: o.y + 80, damage: Math.round(dm * 10) / 10, life: 60, vy: -3, blocked: o.blk});
+                if (o.hp <= 0) this.exp(o);
             }
         }
-
-        function initGame() {
-            document.getElementById('menu').style.display = 'none';
-            p1 = new Fighter(100, ROSTER[p1Key], 'left');
-            p2 = new Fighter(500, ROSTER[p2Key], 'right');
-            gameActive = true;
-            loop();
+        exp(o) {
+            fat = true; o.dead = true; shk = 180; pS(2.5, 0.3);
+            if (this.side === 'left') pW++; else aW++;
+            document.getElementById('p-wins').innerText = pW; document.getElementById('a-wins').innerText = aW;
+            for (let i = 0; i < 65; i++) {
+                ch.push({img: o.img, sx: Math.random() * (o.img.width - 60), sy: Math.random() * (o.img.height - 60), x: o.x + o.w / 2, y: o.y + 100, vx: (Math.random() - 0.5) * 60, vy: (Math.random() - 2) * 45, w: Math.random() * 50 + 20, h: Math.random() * 50 + 20, rot: Math.random() * Math.PI * 2, vRot: (Math.random() - 0.5) * 0.4, ground: false});
+            }
+            setTimeout(() => { document.getElementById('rematch-ui').style.display = 'flex'; }, 3500);
         }
-
-        function loop() {
-            if (!gameActive) return;
-            ctx.clearRect(0, 0, 800, 400);
-            
-            if (shake > 0) { 
+        uSp(o) {
+            shk = 80; hS = 12; pS(2.0, 0.7);
+            for (let i = 0; i < 80; i++) pt.push({x: this.x + this.w / 2, y: this.y + 100, vx: (Math.random() - 0.5) * 50 + (o.x > this.x ? 15 : -15), vy: (Math.random() - 0.5) * 35, life: 1.5, size: Math.random() * 20 + 8, color: `rgba(0,${100 + Math.random() * 155},255,`});
+            if (Math.abs(this.x - o.x) < 250) { o.hp -= 28; o.stun = true; o.sT = 30; o.vx = (this.x < o.x ? 50 : -50); if (o.hp <= 0) this.exp(o); }
+        }
+        drw() {
+            if (!this.dead && this.img.complete) {
                 ctx.save();
-                ctx.translate(Math.random()*shake, Math.random()*shake); 
-                shake *= 0.9; 
+                if (this.blk) { ctx.globalAlpha = 0.7; ctx.fillStyle = 'rgba(0,100,255,0.3)'; ctx.fillRect(this.x - 5, this.y - 5, this.w + 10, this.h + 10); }
+                ctx.drawImage(this.img, this.x, this.y, this.w, this.h); ctx.restore();
             }
-
-            particles = particles.filter(p => {
-                p.x += p.vx; p.y += p.vy; p.life -= 0.02;
-                ctx.fillStyle = `rgba(255,0,0,${p.life})`;
-                ctx.fillRect(p.x, p.y, 5, 5);
-                return p.life > 0;
-            });
-
-            p1.update(p2); p2.update(p1);
-            p1.draw(); p2.draw();
-
-            if (fatality) {
-                ctx.fillStyle = "red"; ctx.font = "60px Impact"; ctx.textAlign = "center";
-                ctx.fillText("FATALITY", 400, 200);
-            }
-
-            if (shake > 0) ctx.restore();
-            requestAnimationFrame(loop);
         }
-    </script>
+    }
+
+    function lp() {
+        if (!gA) return;
+        if (hS > 0) { hS--; requestAnimationFrame(lp); return; }
+        if (!sR && Date.now() - gST >= 5000) { sR = true; document.getElementById('btn-special').classList.add('ready'); }
+        ctx.drawImage(bg, 0, 0, 800, 400);
+        if (shk > 0) { ctx.save(); ctx.translate((Math.random() - 0.5) * shk, (Math.random() - 0.5) * shk); shk *= 0.9; }
+        ch.forEach(c => {
+            if (!c.ground) { c.x += c.vx; c.y += c.vy; c.vy += 1.4; c.rot += c.vRot; if (c.y > 385) { c.y = 392; c.ground = true; } }
+            ctx.save(); ctx.translate(c.x, c.y); ctx.rotate(c.rot); ctx.drawImage(c.img, c.sx, c.sy, 60, 60, -c.w / 2, -c.h / 2, c.w, c.h); ctx.fillStyle = "rgba(220,0,0,0.4)"; ctx.fillRect(-c.w / 2, -c.h / 2, c.w, c.h); ctx.restore();
+        });
+        pt = pt.filter(p => { p.x += p.vx; p.y += p.vy; p.vy += 0.8; p.life -= 0.02; ctx.fillStyle = p.color + p.life + ")"; ctx.fillRect(p.x, p.y, p.size, p.size); return p.life > 0; });
+        dN = dN.filter(d => { d.y += d.vy; d.vy *= 0.95; d.life--; ctx.font = 'bold 32px Impact'; ctx.fillStyle = d.blocked ? 'cyan' : 'white'; ctx.fillText('-' + d.damage, d.x, d.y); return d.life > 0; });
+        p1.upd(p2); p2.upd(p1); p1.drw(); p2.drw();
+        document.getElementById('p1-hp-bar').style.width = (p1.hp / p1.maxHp) * 100 + "%";
+        document.getElementById('p2-hp-bar').style.width = (p2.hp / p2.maxHp) * 100 + "%";
+        document.getElementById('p1-stam-bar').style.width = (p1.stam / p1.maxS) * 100 + "%";
+        document.getElementById('p2-stam-bar').style.width = (p2.stam / p2.maxS) * 100 + "%";
+        if (shk > 0) ctx.restore(); requestAnimationFrame(lp);
+    }
+
+    function sB(id, k) {
+        const e = document.getElementById(id);
+        e.addEventListener('touchstart', ev => { ev.preventDefault(); ks[k] = true; });
+        e.addEventListener('touchend', ev => { ev.preventDefault(); ks[k] = false; });
+    }
+    sB('btn-up', 'w'); sB('btn-left', 'a'); sB('btn-right', 'd'); sB('btn-atk', 's'); sB('btn-block', 'b'); sB('btn-special', 'sp');
+
+    function initGame() {
+        document.getElementById('vs-screen').style.display = 'none';
+        document.getElementById('menu').style.display = 'none';
+        p1 = new F(100, R[p1K], 'left'); p2 = new F(550, R[p2K], 'right');
+        gST = Date.now(); gA = true; lp();
+    }
+    function resetToMenu() { location.reload(); }
+</script>
 </body>
-
 </html>
-
